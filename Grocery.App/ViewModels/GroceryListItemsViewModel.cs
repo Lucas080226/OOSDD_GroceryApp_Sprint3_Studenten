@@ -15,14 +15,19 @@ namespace Grocery.App.ViewModels
         private readonly IGroceryListItemsService _groceryListItemsService;
         private readonly IProductService _productService;
         private readonly IFileSaverService _fileSaverService;
-        
+
         public ObservableCollection<GroceryListItem> MyGroceryListItems { get; set; } = [];
         public ObservableCollection<Product> AvailableProducts { get; set; } = [];
+        public ObservableCollection<Product> FilteredProducts { get; set; } = new();
 
         [ObservableProperty]
         GroceryList groceryList = new(0, "None", DateOnly.MinValue, "", 0);
         [ObservableProperty]
         string myMessage;
+
+        [ObservableProperty]
+        private string searchText; // backing field
+
 
         public GroceryListItemsViewModel(IGroceryListItemsService groceryListItemsService, IProductService productService, IFileSaverService fileSaverService)
         {
@@ -42,9 +47,16 @@ namespace Grocery.App.ViewModels
         private void GetAvailableProducts()
         {
             AvailableProducts.Clear();
+            FilteredProducts.Clear(); // Clear filtered products too
+
             foreach (Product p in _productService.GetAll())
-                if (MyGroceryListItems.FirstOrDefault(g => g.ProductId == p.Id) == null  && p.Stock > 0)
+            {
+                if (MyGroceryListItems.FirstOrDefault(g => g.ProductId == p.Id) == null && p.Stock > 0)
+                {
                     AvailableProducts.Add(p);
+                    FilteredProducts.Add(p); // Also add to filtered products
+                }
+            }
         }
 
         partial void OnGroceryListChanged(GroceryList value)
@@ -67,8 +79,31 @@ namespace Grocery.App.ViewModels
             product.Stock--;
             _productService.Update(product);
             AvailableProducts.Remove(product);
+            FilteredProducts.Remove(product);
             OnGroceryListChanged(GroceryList);
         }
+
+        
+
+        partial void OnSearchTextChanged(string value)
+        {
+            FilteredProducts.Clear();
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                foreach (var p in AvailableProducts)
+                    FilteredProducts.Add(p);
+                return;
+            }
+
+            foreach (var p in AvailableProducts)
+                if (p.Name.Contains(value, StringComparison.OrdinalIgnoreCase))
+                    FilteredProducts.Add(p);
+        }
+
+
+
+
+
 
         [RelayCommand]
         public async Task ShareGroceryList(CancellationToken cancellationToken)
