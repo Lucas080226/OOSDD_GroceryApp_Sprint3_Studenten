@@ -1,5 +1,4 @@
-﻿
-using Grocery.Core.Interfaces.Repositories;
+﻿using Grocery.Core.Interfaces.Repositories;
 using Grocery.Core.Models;
 
 namespace Grocery.Core.Data.Repositories
@@ -19,19 +18,30 @@ namespace Grocery.Core.Data.Repositories
 
         public Client? Get(string email)
         {
-            Client? client = clientList.FirstOrDefault(c => c.EmailAddress.Equals(email));
-            return client;
+            return clientList.FirstOrDefault(c => c.EmailAddress.Equals(email));
         }
 
         public Client? Get(int id)
         {
-            Client? client = clientList.FirstOrDefault(c => c.Id == id);
-            return client;
+            return clientList.FirstOrDefault(c => c.Id == id);
         }
 
         public List<Client> GetAll()
         {
             return clientList;
+        }
+
+        // Add method - simple data access
+        public Client Add(Client client)
+        {
+            clientList.Add(client);
+            return client;
+        }
+
+        // EmailExists method - check if email already exists
+        public bool EmailExists(string email)
+        {
+            return clientList.Any(c => c.EmailAddress.Equals(email, StringComparison.OrdinalIgnoreCase));
         }
     }
 }
